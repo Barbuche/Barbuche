@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="htmlElement">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>لوحة تحكم الحلاق</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <style>
+:root {
+      --primary-color: #1a1a1a;
+      --secondary-color: #d4aa70;
+      --accent-color: #e64e4e;
+      --background-color: #f5f5f5;
+      --text-color: #333333;
+      --white: #ffffff;
+      --light-gray: #f5f5f5;
+      --medium-gray: #e0e0e0;
+      --waiting-bg: #e0f7fa;
+      --font-primary: 'Poppins', sans-serif;
+      --font-heading: 'Playfair Display', serif;
+      --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      --transition: all 0.3s ease;
+      --toast-success: #4CAF50;
+      --toast-error: #f44336;
+      --toast-info: #2196F3;
+      --status-reserved-bg: #fff3cd;
+      --status-reserved-border: #e6c872;
+      --status-confirmed-bg: #d4edda;
+      --status-confirmed-border: #a3d7a8;
+      --status-waiting-bg: #d1ecf1;
+      --status-waiting-border: #9cd4dd;
+      --status-pending-bg: #f8d7da;
+      --status-pending-border: #e4a6ab;
+      --status-from-waiting-bg: #cce5ff;
+      --status-from-waiting-border: #85c1e9;
+      --status-missed-bg: #e2e3e5;
+      --status-missed-border: #b9bbbe;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-primary);
+      background-color: var(--background-color);
+      padding-bottom: 80px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text-color);
+      overflow-x: hidden;
+    }
+
+    .toast {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      left: 10px;
+      max-width: 100%;
+      padding: 10px 12px;
+      border-radius: 6px;
+      color: white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      transform: translateX(120%);
+      opacity: 0;
+      transition: var(--transition);
+      font-size: 12px;
+    }
+
+    .toast.show {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    .toast.success { background-color: var(--toast-success); border-left: 4px solid #2E7D32; }
+    .toast.error { background-color: var(--toast-error); border-left: 4px solid #C62828; }
+    .toast.info { background-color: var(--toast-info); border-left: 4px solid #1565C0; }
+    .toast.confirm { background-color: #f8d7da; color: #721c24; flex-direction: column; padding: 12px; }
+
+    .toast-icon { margin-right: 8px; font-size: 14px; }
+    .toast-close { background: none; border: none; color: white; font-size: 12px; cursor: pointer; margin-left: 8px; opacity: 0.7; transition: opacity 0.2s; }
+    .toast-close:hover { opacity: 1; }
+    .toast.confirm .toast-buttons { margin-top: 8px; display: flex; gap: 8px; }
+    .toast.confirm button { padding: 4px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+    .toast.confirm .yes-btn { background-color: #dc3545; color: white; }
+    .toast.confirm .no-btn { background-color: #6c757d; color: white; }
+
+    .admin-main { padding: 10px 5px; width: 100%; max-width: 540px; margin: 0 auto; }
+    section { background-color: var(--white); border-radius: 6px; padding: 10px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    h2 { font-family: var(--font-heading); margin-bottom: 8px; color: var(--primary-color); font-size: 1.1rem; }
+    label { display: block; margin-bottom: 4px; font-weight: 500; font-size: 12px; }
+    input[type="date"], .time-display { width: 100%; padding: 6px; margin-bottom: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: var(--font-primary); font-size: 12px; background: var(--white); }
+    .time-display { cursor: pointer; }
+
+    .time-picker-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center; }
+    .time-picker-content { background: var(--white); padding: 10px; border-radius: 6px; width: 90%; max-width: 280px; text-align: center; }
+    .time-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 8px; max-height: 180px; overflow-y: auto; }
+    .time-option { padding: 4px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 11px; transition: var(--transition); }
+    .time-option:hover { background: var(--light-gray); }
+    .time-option.selected { background: var(--secondary-color); color: var(--primary-color); }
+
+    .working-hours-form { display: flex; flex-direction: column; gap: 8px; }
+    .control-buttons { display: flex; flex-direction: column; gap: 8px; }
+    .control-btn { background-color: var(--secondary-color); color: var(--primary-color); border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 12px; transition: var(--transition); }
+    .control-btn.stop { background-color: var(--accent-color); color: var(--white); }
+    .control-btn.continue { background-color: #4CAF50; color: var(--white); }
+    .control-btn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+    .control-btn:hover:not(:disabled) { background-color: #c0934f; }
+    button:not(.language-btn):not(.control-btn):not(.toggle-btn) { background-color: var(--secondary-color); color: var(--primary-color); border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: 600; width: 100%; font-size: 12px; transition: var(--transition); }
+    button:not(.language-btn):not(.control-btn):not(.toggle-btn):hover { background-color: #c0934f; }
+
+    .toggle-buttons { display: flex; gap: 8px; margin-bottom: 10px; }
+    .toggle-btn { flex: 1; background-color: var(--medium-gray); color: var(--primary-color); border: 1px solid var(--secondary-color); padding: 6px 8px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 12px; transition: var(--transition); }
+    .toggle-btn.active { background-color: var(--secondary-color); color: var(--white); }
+    .toggle-btn:hover:not(.active) { background-color: #ececec; }
+
+    #waitingAppointments { background-color: var(--waiting-bg); }
+    .day-group { margin-bottom: 8px; }
+    .day-header { padding: 6px 10px; background: var(--medium-gray); border: 1px solid var(--secondary-color); border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--primary-color); transition: var(--transition); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); }
+    .day-header:hover { background: #ececec; }
+    .appointments-list { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+    .appointments-list.active { max-height: 500px; margin-top: 8px; }
+    .appointments-list ul { list-style: none; padding: 0; margin: 0; }
+    .appointments-list li { padding: 6px; border-bottom: 1px solid #eee; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; cursor: pointer; transition: background-color 0.2s; }
+    .appointments-list li:hover { background-color: #f9f9f9; }
+    .appointment-info { flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(50px, 1fr)); gap: 6px; align-items: center; }
+    .appointment-info span { white-space: nowrap; font-size: 11px; }
+    .appointment-name { max-width: 100px; overflow: hidden; text-overflow: ellipsis; }
+    .appointment-details { display: none; width: 100%; padding: 8px; background: var(--light-gray); border-radius: 4px; margin-top: 6px; }
+    .appointment-details.active { display: block; }
+    .appointment-details div { margin: 4px 0; font-size: 11px; }
+    .appointment-details span { font-weight: bold; display: inline-block; min-width: 60px; }
+    .cancel-btn { background-color: var(--accent-color); color: var(--white); padding: 4px 8px; margin-top: 4px; border: none; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; transition: var(--transition); }
+    .cancel-btn:hover { background-color: #d43f3f; }
+
+    .appointment-status { display: inline-block; padding: 2px 6px; border-radius: 8px; font-weight: 600; font-size: 11px; text-align: center; border: 1px solid; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); }
+    .status-reserved { background-color: var(--status-reserved-bg); color: var(--secondary-color); border-color: var(--status-reserved-border); }
+    .status-confirmed { background-color: var(--status-confirmed-bg); color: var(--toast-success); border-color: var(--status-confirmed-border); }
+    .status-waiting { background-color: var(--status-waiting-bg); color: var(--toast-info); border-color: var(--status-waiting-border); }
+    .status-pending { background-color: var(--status-pending-bg); color: var(--toast-error); border-color: var(--status-pending-border); }
+    .status-from-waiting { background-color: var(--status-from-waiting-bg); color: #2980b9; border-color: var(--status-from-waiting-border); }
+    .status-missed { background-color: var(--status-missed-bg); color: var(--text-color); border-color: var(--status-missed-border); }
+
+    .admin-navbar { position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--primary-color); color: var(--white); z-index: 1000; box-shadow: var(--box-shadow); padding: 6px 0; }
+    .admin-nav-list { display: flex; justify-content: space-around; list-style: none; }
+    .admin-nav-item { flex: 1; text-align: center; }
+    .admin-nav-link { display: flex; flex-direction: column; align-items: center; font-size: 9px; color: var(--white); transition: var(--transition); padding: 4px; }
+    .admin-nav-link i { font-size: 14px; margin-bottom: 2px; }
+    .admin-nav-link:hover { color: var(--secondary-color); }
+    .language-btn { background-color: transparent; color: var(--white); border: none; padding: 4px; font-weight: 600; cursor: pointer; transition: var(--transition); display: flex; flex-direction: column; align-items: center; font-size: 9px; width: 100%; }
+    .language-btn i { font-size: 14px; margin-bottom: 2px; }
+    .language-btn:hover { color: var(--secondary-color); }
+
+    @media (max-width: 540px) {
+      .admin-main { padding: 8px 4px; }
+      section { padding: 8px; margin-bottom: 8px; }
+      h2 { font-size: 1rem; }
+      .appointment-info { grid-template-columns: 1fr; }
+      .appointment-name { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="toast" class="toast" style="display: none;"></div>
+
+  <main class="admin-main">
+    <section id="setWorkingHours">
+      <h2 data-i18n="working_hours">ساعات العمل</h2>
+      <div class="working-hours-form">
+        <div>
+          <label for="workDate" data-i18n="select_date">اختر التاريخ</label>
+          <input type="date" id="workDate" name="workDate" required>
+        </div>
+        <div>
+          <label for="workStartTime" data-i18n="start_time">وقت البدء</label>
+          <div class="time-display" id="startTimeDisplay" data-i18n="select_time">اختر الوقت</div>
+          <input type="hidden" id="workStartTime" name="workStartTime">
+        </div>
+        <div>
+          <label for="workEndTime" data-i18n="end_time">وقت الانتهاء</label>
+          <div class="time-display" id="endTimeDisplay" data-i18n="select_time">اختر الوقت</div>
+          <input type="hidden" id="workEndTime" name="workEndTime">
+        </div>
+        <button type="button" id="saveWorkHours" data-i18n="save_hours">حفظ الساعات</button>
+      </div>
+    </section>
+
+    <section id="controlAppointments">
+      <h2 data-i18n="control_appointments">التحكم في الحجوزات</h2>
+      <div class="control-buttons">
+        <button type="button" id="stopAppointments" class="control-btn stop" data-i18n="stop_appointments">إيقاف الحجوزات</button>
+        <button type="button" id="continueAppointments" class="control-btn continue" data-i18n="continue_appointments">استئناف الحجوزات</button>
+      </div>
+    </section>
+
+    <section id="appointments">
+      <h2 data-i18n="appointments">المواعيد</h2>
+      <div class="toggle-buttons">
+        <button class="toggle-btn active" id="normalToggle" data-i18n="normal_appointments">المواعيد العادية</button>
+        <button class="toggle-btn" id="waitingToggle" data-i18n="waiting_appointments">مواعيد الانتظار</button>
+      </div>
+      <div id="normalAppointments" class="appointments-container"></div>
+      <div id="waitingAppointments" class="appointments-container" style="display: none;"></div>
+    </section>
+  </main>
+
+  <nav class="admin-navbar">
+    <ul class="admin-nav-list">
+      <li class="admin-nav-item">
+        <a href="#setWorkingHours" class="admin-nav-link">
+          <i class="fas fa-clock"></i>
+          <span data-i18n="working_hours">ساعات العمل</span>
+        </a>
+      </li>
+      <li class="admin-nav-item">
+        <a href="#appointments" class="admin-nav-link">
+          <i class="fas fa-calendar-alt"></i>
+          <span data-i18n="appointments">المواعيد</span>
+        </a>
+      </li>
+      <li class="admin-nav-item">
+        <a href="#controlAppointments" class="admin-nav-link">
+          <i class="fas fa-toggle-on"></i>
+          <span data-i18n="control_appointments">التحكم في الحجوزات</span>
+        </a>
+      </li>
+      <li class="admin-nav-item">
+        <button class="language-btn" id="languageToggle">
+          <i class="fas fa-globe"></i>
+          <span id="languageLabel">FR</span>
+        </button>
+      </li>
+    </ul>
+  </nav>
+
+  <div id="timePickerModal" class="time-picker-modal">
+    <div class="time-picker-content">
+      <h3 data-i18n="select_time">اختر الوقت</h3>
+      <div class="time-options" id="timeOptions"></div>
+    </div>
+  </div>
+
+  <!DOCTYPE html>
+  <html lang="ar" dir="rtl" id="htmlElement">
+  <head>
+    <!-- Existing head content unchanged -->
+  </head>
+  <body>
+    <!-- Existing body content unchanged -->
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyAM4Ndd0QpNopVDh7GVVt3VNRpEJqjN6bE",
+        authDomain: "barber-9e894.firebaseapp.com",
+        databaseURL: "https://barber-9e894-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "barber-9e894",
+        storageBucket: "barber-9e894.appspot.com",
+        messagingSenderId: "945554099633",
+        appId: "1:945554099633:web:6165ab5141244353eac190",
+        measurementId: "G-Q11YNGD98E"
+      };
+  
+      const app = firebase.initializeApp(firebaseConfig);
+      const database = firebase.database();
+      const auth = firebase.auth();
+      const appointmentsRef = database.ref('appointments');
+      const waitingListRef = database.ref('waitingList');
+  
+      function showToast(message, type = 'info', duration = 3000, confirmCallback = null) {
+        const toast = document.getElementById('toast');
+        toast.classList.remove('show');
+        toast.style.display = 'none';
+        toast.innerHTML = '';
+  
+        const toastIcon = document.createElement('i');
+        let iconClass;
+        switch(type) {
+          case 'success': iconClass = 'fa-check-circle'; break;
+          case 'error': iconClass = 'fa-exclamation-circle'; break;
+          case 'info': iconClass = 'fa-info-circle'; break;
+          case 'confirm': iconClass = 'fa-question-circle'; break;
+          default: iconClass = 'fa-info-circle';
+        }
+        toastIcon.className = `fas ${iconClass} toast-icon`;
+  
+        const toastMessage = document.createElement('span');
+        toastMessage.id = 'toastMessage';
+        toastMessage.textContent = message;
+  
+        const toastClose = document.createElement('button');
+        toastClose.className = 'toast-close';
+        toastClose.textContent = '×';
+        toastClose.onclick = hideToast;
+  
+        toast.appendChild(toastIcon);
+        toast.appendChild(toastMessage);
+        toast.appendChild(toastClose);
+  
+        toast.className = `toast ${type}`;
+        toast.style.display = 'flex';
+  
+        if (type === 'confirm') {
+          const buttonsDiv = document.createElement('div');
+          buttonsDiv.className = 'toast-buttons';
+          buttonsDiv.innerHTML = `
+            <button class="yes-btn" data-i18n="yes">نعم</button>
+            <button class="no-btn" data-i18n="no">لا</button>`;
+          toast.appendChild(buttonsDiv);
+          updateLanguage(document.documentElement.lang);
+          buttonsDiv.querySelector('.yes-btn').onclick = () => { confirmCallback(true); hideToast(); };
+          buttonsDiv.querySelector('.no-btn').onclick = () => { confirmCallback(false); hideToast(); };
+        } else {
+          setTimeout(hideToast, duration);
+        }
+  
+        setTimeout(() => toast.classList.add('show'), 10);
+  
+        function hideToast() {
+          toast.classList.remove('show');
+          setTimeout(() => toast.style.display = 'none', 300);
+        }
+      }
+  
+      const translations = {
+        ar: {
+          "working_hours": "ساعات العمل",
+          "appointments": "المواعيد",
+          "control_appointments": "التحكم في الحجوزات",
+          "select_date": "اختر التاريخ",
+          "start_time": "وقت البدء",
+          "end_time": "وقت الانتهاء",
+          "save_hours": "حفظ الساعات",
+          "stop_appointments": "إيقاف الحجوزات",
+          "continue_appointments": "استئناف الحجوزات",
+          "hours_saved": "تم حفظ ساعات العمل بنجاح!",
+          "appointments_stopped": "تم إيقاف الحجوزات بنجاح!",
+          "appointments_continued": "تم استئناف الحجوزات بنجاح!",
+          "error": "خطأ",
+          "no_appointments": "لا توجد مواعيد",
+          "normal_appointments": "المواعيد العادية",
+          "waiting_appointments": "مواعيد الانتظار",
+          "waiting_list": "قائمة الانتظار",
+          "full_name": "الاسم الكامل",
+          "date": "التاريخ",
+          "time": "الوقت",
+          "phone": "رقم الهاتف",
+          "status": "الحالة",
+          "reserved": "محجوز",
+          "confirmed": "مؤكد",
+          "waiting": "في انتظار التأكيد ",
+          "pending": "في انتظار التأكيد",
+          "from_waiting": "من قائمة الانتظار",
+          "missed": "مفقود",
+          "morning": "صباحاً",
+          "afternoon": "ظهراً",
+          "evening": "مساءً",
+          "night": "ليلاً",
+          "yes": "نعم",
+          "no": "لا",
+          "cancel_appointment": "إلغاء الموعد",
+          "confirm_cancel": "هل أنت متأكد من إلغاء هذا الموعد؟",
+          "appointment_canceled": "تم إلغاء الموعد بنجاح!",
+          "select_time": "اختر الوقت",
+          "pending_time": "وقت معلق"
+        },
+        fr: {
+          "working_hours": "Heures de travail",
+          "appointments": "Rendez-vous",
+          "control_appointments": "Contrôle des réservations",
+          "select_date": "Sélectionner une date",
+          "start_time": "Heure de début",
+          "end_time": "Heure de fin",
+          "save_hours": "Enregistrer les heures",
+          "stop_appointments": "Arrêter les réservations",
+          "continue_appointments": "Reprendre les réservations",
+          "hours_saved": "Heures de travail enregistrées avec succès!",
+          "appointments_stopped": "Réservations arrêtées avec succès!",
+          "appointments_continued": "Réservations reprises avec succès!",
+          "error": "Erreur",
+          "no_appointments": "Aucun rendez-vous",
+          "normal_appointments": "Rendez-vous normaux",
+          "waiting_appointments": "Rendez-vous en attente",
+          "waiting_list": "Liste d'attente",
+          "full_name": "Nom complet",
+          "date": "Date",
+          "time": "Heure",
+          "phone": "Téléphone",
+          "status": "Statut",
+          "reserved": "Réservé",
+          "confirmed": "Confirmé",
+          "waiting": "En attente de confirmation",
+          "pending": "En attente de confirmation",
+          "from_waiting": "De la liste d'attente",
+          "missed": "Manqué",
+          "morning": "Matin",
+          "afternoon": "Après-midi",
+          "evening": "Soir",
+          "night": "Nuit",
+          "yes": "Oui",
+          "no": "Non",
+          "cancel_appointment": "Annuler le rendez-vous",
+          "confirm_cancel": "Êtes-vous sûr de vouloir annuler ce rendez-vous ?",
+          "appointment_canceled": "Rendez-vous annulé avec succès !",
+          "select_time": "Sélectionner l'heure",
+          "pending_time": "Heure en attente"
+        }
+      };
+  
+      function updateLanguage(lang, shouldRefresh = false) {
+        document.documentElement.lang = lang;
+        document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+          const key = el.getAttribute('data-i18n');
+          el.textContent = translations[lang][key] || el.textContent;
+        });
+        document.getElementById('languageLabel').textContent = lang === 'ar' ? 'FR' : 'AR';
+        localStorage.setItem('adminLang', lang);
+        if (shouldRefresh) {
+          renderAppointments();
+        }
+      }
+  
+      const savedLang = localStorage.getItem('adminLang') || 'ar';
+      updateLanguage(savedLang);
+  
+      document.getElementById('languageToggle')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        const newLang = document.documentElement.lang === 'ar' ? 'fr' : 'ar';
+        updateLanguage(newLang, true);
+      });
+  
+      function formatTimeWithPeriod(timeStr) {
+        if (!timeStr) return translations[document.documentElement.lang]['pending_time'];
+        const [hours, minutes] = timeStr.split(':');
+        const hourNum = parseInt(hours);
+        let period;
+        if (hourNum >= 5 && hourNum < 12) period = translations[document.documentElement.lang]['morning'];
+        else if (hourNum >= 12 && hourNum < 17) period = translations[document.documentElement.lang]['afternoon'];
+        else if (hourNum >= 17 && hourNum < 21) period = translations[document.documentElement.lang]['evening'];
+        else period = translations[document.documentElement.lang]['night'];
+        return `${hourNum}:${minutes} ${period}`;
+      }
+  
+      function checkAppointmentStatus(appointmentDate, appointmentTime, currentStatus) {
+        if (!appointmentTime) return 'waiting';
+        const now = new Date();
+        const appointmentDateTime = new Date(`${appointmentDate}T${appointmentTime}:00`);
+        const timeDiff = (appointmentDateTime - now) / (1000 * 60);
+  
+        if (currentStatus === 'confirmed') return 'confirmed';
+        if (timeDiff <= 30 && timeDiff > 0) return 'pending';
+        if (timeDiff <= 0) return 'missed';
+        return currentStatus || 'reserved';
+      }
+  
+      document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date();
+        const maxDate = new Date(today);
+        maxDate.setDate(today.getDate() + 4);
+        const dateInput = document.getElementById('workDate');
+        dateInput.min = formatDate(today);
+        dateInput.max = formatDate(maxDate);
+        dateInput.value = formatDate(today);
+  
+        const timePickerModal = document.getElementById('timePickerModal');
+        const timeOptions = document.getElementById('timeOptions');
+        const startTimeDisplay = document.getElementById('startTimeDisplay');
+        const endTimeDisplay = document.getElementById('endTimeDisplay');
+        const workStartTime = document.getElementById('workStartTime');
+        const workEndTime = document.getElementById('workEndTime');
+  
+        const timeSlots = [];
+        for (let h = 0; h < 24; h++) {
+          for (let m = 0; m < 60; m += 30) {
+            timeSlots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
+          }
+        }
+  
+        function populateTimeOptions(targetInput) {
+          timeOptions.innerHTML = '';
+          timeSlots.forEach(time => {
+            const div = document.createElement('div');
+            div.className = 'time-option';
+            div.textContent = formatTimeWithPeriod(time);
+            div.dataset.time = time;
+            div.onclick = () => {
+              targetInput.value = time;
+              (targetInput === workStartTime ? startTimeDisplay : endTimeDisplay).textContent = formatTimeWithPeriod(time);
+              timePickerModal.style.display = 'none';
+            };
+            timeOptions.appendChild(div);
+          });
+        }
+  
+        startTimeDisplay.onclick = () => {
+          populateTimeOptions(workStartTime);
+          timePickerModal.style.display = 'flex';
+        };
+  
+        endTimeDisplay.onclick = () => {
+          populateTimeOptions(workEndTime);
+          timePickerModal.style.display = 'flex';
+        };
+  
+        timePickerModal.onclick = (e) => {
+          if (e.target === timePickerModal) timePickerModal.style.display = 'none';
+        };
+  
+        const normalToggle = document.getElementById('normalToggle');
+        const waitingToggle = document.getElementById('waitingToggle');
+        const normalSection = document.getElementById('normalAppointments');
+        const waitingSection = document.getElementById('waitingAppointments');
+  
+        normalToggle.onclick = () => {
+          normalToggle.classList.add('active');
+          waitingToggle.classList.remove('active');
+          normalSection.style.display = 'block';
+          waitingSection.style.display = 'none';
+        };
+  
+        waitingToggle.onclick = () => {
+          waitingToggle.classList.add('active');
+          normalToggle.classList.remove('active');
+          waitingSection.style.display = 'block';
+          normalSection.style.display = 'none';
+        };
+  
+        updateButtonStates();
+  
+        auth.onAuthStateChanged(user => {
+          if (!user) window.location.href = 'index.html';
+        });
+      });
+  
+      function formatDate(date) {
+        return date.toISOString().split('T')[0];
+      }
+  
+      document.getElementById('saveWorkHours').addEventListener('click', function() {
+        const workDate = document.getElementById('workDate').value;
+        const workStartTime = document.getElementById('workStartTime').value;
+        const workEndTime = document.getElementById('workEndTime').value;
+  
+        if (!workDate || !workStartTime || !workEndTime) {
+          showToast(`${translations[document.documentElement.lang]['error']}: Please fill all fields`, 'error');
+          return;
+        }
+  
+        // Update only the selected day
+        const updates = {};
+        const formattedDate = formatDate(new Date(workDate));
+        updates[`workingHours/${formattedDate}`] = { workStartTime, workEndTime };
+  
+        database.ref().update(updates).then(() => {
+          showToast(translations[document.documentElement.lang]['hours_saved'], 'success');
+          document.getElementById('workStartTime').value = '';
+          document.getElementById('workEndTime').value = '';
+          document.getElementById('startTimeDisplay').textContent = translations[document.documentElement.lang]['select_time'];
+          document.getElementById('endTimeDisplay').textContent = translations[document.documentElement.lang]['select_time'];
+        }).catch(error => {
+          showToast(`${translations[document.documentElement.lang]['error']}: ${error.message}`, 'error');
+        });
+      });
+  
+      let currentAppointments = {};
+      let currentWaitingList = {};
+  
+      function renderAppointments() {
+        const normalAppointments = document.getElementById('normalAppointments');
+        const waitingAppointments = document.getElementById('waitingAppointments');
+        normalAppointments.innerHTML = '';
+        waitingAppointments.innerHTML = '';
+        
+        const normalGrouped = {};
+        const waitingGrouped = {};
+        const lang = document.documentElement.lang;
+  
+        Object.keys(currentAppointments).forEach(date => {
+          const normalAppts = [];
+          const waitingAppts = [];
+          Object.entries(currentAppointments[date]).forEach(([key, appt]) => {
+            let status = appt.status || 'reserved';
+            const time = appt.appointmentTime || null;
+            status = checkAppointmentStatus(date, time, status);
+            if (status !== appt.status) {
+              database.ref(`appointments/${date}/${key}`).update({ status });
+            }
+            const phoneNumber = appt.phoneNumber.replace('+216', '');
+            const displayStatus = (appt.fromWaitingList && (status === 'pending' || status === 'waiting')) ? 'from_waiting' : status;
+            const appointmentData = {
+              key,
+              date,
+              fullName: appt.fullName,
+              phoneNumber,
+              time: formatTimeWithPeriod(time),
+              rawTime: time || '00:00',
+              status: displayStatus,
+              fromWaitingList: appt.fromWaitingList || false,
+              ticketNumber: appt.originalTicketNumber || 'N/A'
+            };
+            if (status === 'waiting' && !time) {
+              waitingAppts.push(appointmentData);
+            } else {
+              normalAppts.push(appointmentData);
+            }
+          });
+          normalGrouped[date] = normalAppts.sort((a, b) => a.rawTime.localeCompare(b.rawTime));
+          waitingGrouped[date] = waitingAppts.sort((a, b) => a.rawTime.localeCompare(b.rawTime));
+        });
+  
+        const waitingListKey = translations[lang]['waiting_list'];
+        waitingGrouped[waitingListKey] = [];
+        Object.entries(currentWaitingList).forEach(([key, user]) => {
+          const phoneNumber = user.phoneNumber.replace('+216', '');
+          waitingGrouped[waitingListKey].push({
+            key,
+            date: 'N/A',
+            fullName: user.fullName,
+            phoneNumber,
+            time: translations[lang]['pending_time'],
+            rawTime: '00:00',
+            status: 'from_waiting',
+            fromWaitingList: true,
+            ticketNumber: user.ticketNumber
+          });
+        });
+        waitingGrouped[waitingListKey].sort((a, b) => a.ticketNumber - b.ticketNumber);
+  
+        function renderGroupedAppointments(grouped, container) {
+          if (Object.keys(grouped).length === 0) {
+            container.innerHTML = `<p>${translations[lang]['no_appointments']}</p>`;
+            return;
+          }
+          Object.keys(grouped).forEach(date => {
+            if (grouped[date].length === 0) return;
+            const dayGroup = document.createElement('div');
+            dayGroup.className = 'day-group';
+            dayGroup.innerHTML = `
+              <div class="day-header">${date}</div>
+              <div class="appointments-list">
+                <ul></ul>
+              </div>`;
+            const ul = dayGroup.querySelector('ul');
+            grouped[date].forEach(appt => {
+              const li = document.createElement('li');
+              li.innerHTML = `
+                <div class="appointment-info">
+                  <span class="appointment-name">${appt.fullName}</span>
+                  <span class="appointment-time">${appt.time}</span>
+                  <span class="appointment-status status-${appt.status}">
+                    ${translations[lang][appt.status] || appt.status}
+                  </span>
+                </div>
+                <div class="appointment-details">
+                  <div><span data-i18n="full_name">${translations[lang]['full_name']}</span>: ${appt.fullName}</div>
+                  <div><span data-i18n="date">${translations[lang]['date']}</span>: ${appt.date}</div>
+                  <div><span data-i18n="time">${translations[lang]['time']}</span>: ${appt.time}</div>
+                  <div><span data-i18n="phone">${translations[lang]['phone']}</span>: ${appt.phoneNumber}</div>
+                  <div><span data-i18n="status">${translations[lang]['status']}</span>: <span class="status-${appt.status}">${translations[lang][appt.status] || appt.status}</span></div>
+                  ${appt.fromWaitingList ? `<div><span data-i18n="from_waiting">${translations[lang]['from_waiting']}</span>: ${translations[lang]['yes']} (#${appt.ticketNumber})</div>` : ''}
+                  <button class="cancel-btn" data-key="${appt.key}" data-date="${appt.date}" data-i18n="cancel_appointment">${translations[lang]['cancel_appointment']}</button>
+                </div>`;
+              ul.appendChild(li);
+            });
+            container.appendChild(dayGroup);
+  
+            dayGroup.querySelector('.day-header').onclick = () => {
+              const list = dayGroup.querySelector('.appointments-list');
+              list.classList.toggle('active');
+            };
+          });
+        }
+  
+        renderGroupedAppointments(normalGrouped, normalAppointments);
+        renderGroupedAppointments(waitingGrouped, waitingAppointments);
+  
+        document.querySelectorAll('.cancel-btn').forEach(btn => {
+          btn.onclick = () => {
+            const key = btn.dataset.key;
+            const date = btn.dataset.date;
+            showToast(translations[lang]['confirm_cancel'], 'confirm', Infinity, (confirmed) => {
+              if (confirmed) {
+                const ref = date === translations[lang]['waiting_list'] ? waitingListRef.child(key) : appointmentsRef.child(date).child(key);
+                ref.remove().then(() => {
+                  showToast(translations[lang]['appointment_canceled'], 'success');
+                }).catch(error => {
+                  showToast(`${translations[lang]['error']}: ${error.message}`, 'error');
+                });
+              }
+            });
+          };
+        });
+  
+        document.querySelectorAll('.appointments-list li').forEach(li => {
+          li.addEventListener('click', function(e) {
+            if (e.target.className === 'cancel-btn') return;
+            this.querySelector('.appointment-details').classList.toggle('active');
+          });
+        });
+      }
+  
+      database.ref().on('value', snapshot => {
+        const data = snapshot.val();
+        currentAppointments = data?.appointments || {};
+        currentWaitingList = data?.waitingList || {};
+        renderAppointments();
+      });
+  
+      function cleanPastData() {
+        const now = new Date();
+        const currentDate = formatDate(now);
+        database.ref('appointments').once('value', snapshot => {
+          snapshot.forEach(dateSnapshot => {
+            const date = dateSnapshot.key;
+            if (date < currentDate) {
+              database.ref(`appointments/${date}`).remove();
+              database.ref(`workingHours/${date}`).remove();
+            }
+          });
+        });
+      }
+  
+      setInterval(() => {
+        const now = new Date();
+        if (now.getHours() === 0 && now.getMinutes() === 0) cleanPastData();
+        renderAppointments();
+      }, 60000);
+  
+      const stopBtn = document.getElementById('stopAppointments');
+      const continueBtn = document.getElementById('continueAppointments');
+  
+      function updateButtonStates() {
+        database.ref('settings/allowAppointments').once('value', snapshot => {
+          const allowAppointments = snapshot.val() !== false;
+          stopBtn.disabled = !allowAppointments;
+          continueBtn.disabled = allowAppointments;
+        });
+      }
+  
+      stopBtn.addEventListener('click', function() {
+        database.ref('settings').update({ allowAppointments: false }).then(() => {
+          showToast(translations[document.documentElement.lang]['appointments_stopped'], 'success');
+          updateButtonStates();
+        }).catch(error => {
+          showToast(`${translations[document.documentElement.lang]['error']}: ${error.message}`, 'error');
+        });
+      });
+  
+      continueBtn.addEventListener('click', function() {
+        database.ref('settings').update({ allowAppointments: true }).then(() => {
+          showToast(translations[document.documentElement.lang]['appointments_continued'], 'success');
+          updateButtonStates();
+        }).catch(error => {
+          showToast(`${translations[document.documentElement.lang]['error']}: ${error.message}`, 'error');
+        });
+      });
+  
+      database.ref('settings/allowAppointments').on('value', snapshot => {
+        const allowAppointments = snapshot.val() !== false;
+        stopBtn.disabled = !allowAppointments;
+        continueBtn.disabled = allowAppointments;
+      });
+  
+      cleanPastData();
+    </script>
+  </body>
+  </html>
+</body>
+</html>

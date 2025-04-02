@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="htmlElement">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>تأكيد الموعد - صالون الحلاقة</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <style>
+    :root {
+      --primary-color: #1a1a1a;
+      --secondary-color: #d4aa70;
+      --accent-color: #e64e4e;
+      --background-color: #f5f5f5;
+      --text-color: #333333;
+      --white: #ffffff;
+      --light-gray: #f9f9f9;
+      --medium-gray: #e0e0e0;
+      --dark-gray: #888888;
+      --font-primary: 'Poppins', sans-serif;
+      --font-heading: 'Playfair Display', serif;
+      --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      --transition: all 0.3s ease;
+      --toast-success: #4CAF50;
+      --toast-error: #f44336;
+      --toast-info: #2196F3;
+      --status-reserved-bg: #fff3cd;
+      --status-reserved-border: #e6c872;
+      --status-confirmed-bg: #d4edda;
+      --status-confirmed-border: #a3d7a8;
+      --status-waiting-bg: #d1ecf1;
+      --status-waiting-border: #9cd4dd;
+      --status-pending-bg: #f8d7da;
+      --status-pending-border: #e4a6ab;
+      --status-missed-bg: #e2e3e5;
+      --status-missed-border: #b9bbbe;
+      --timer-bg: #eee;
+      --timer-text: var(--primary-color);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-primary);
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-color);
+      background-color: var(--background-color);
+      padding: 10px;
+    }
+
+    .toast {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      left: 10px;
+      max-width: 100%;
+      padding: 12px 15px;
+      border-radius: 6px;
+      color: white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      transform: translateY(-150%);
+      opacity: 0;
+      transition: var(--transition);
+      font-size: 12px;
+    }
+
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { background-color: var(--toast-success); border-left: 4px solid #2E7D32; }
+    .toast.error { background-color: var(--toast-error); border-left: 4px solid #C62828; }
+    .toast.info { background-color: var(--toast-info); border-left: 4px solid #1565C0; }
+    .toast.confirm { background-color: #f8d7da; color: #721c24; flex-direction: column; padding: 15px; border-left: 4px solid #e4a6ab; }
+
+    .toast-icon { margin-right: 8px; font-size: 14px; }
+    .toast-message { flex-grow: 1; }
+    .toast-close { background: none; border: none; color: white; font-size: 12px; cursor: pointer; margin-left: 10px; opacity: 0.7; transition: opacity 0.2s; }
+    .toast-close:hover { opacity: 1; }
+    .toast.confirm .toast-buttons { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
+    .toast.confirm button { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500; }
+    .toast.confirm .yes-btn { background-color: var(--accent-color); color: white; }
+    .toast.confirm .no-btn { background-color: var(--dark-gray); color: white; }
+
+    .confirmation-container {
+      max-width: 100%;
+      margin: 0 auto;
+      background-color: var(--white);
+      padding: 15px;
+      border-radius: 6px;
+      box-shadow: var(--box-shadow);
+    }
+
+    .confirmation-header {
+      text-align: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--medium-gray);
+    }
+
+    .confirmation-header h2 {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      color: var(--primary-color);
+      margin-bottom: 5px;
+    }
+    .confirmation-header p {
+      font-size: 0.9rem;
+      color: var(--dark-gray);
+    }
+
+    .appointments-list {
+      list-style: none;
+      margin-bottom: 15px;
+      padding: 0;
+    }
+
+    .appointment-card {
+      background-color: var(--light-gray);
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      border-left: 4px solid var(--secondary-color);
+      transition: var(--transition);
+    }
+    .appointment-card:hover { background-color: #f0f0f0; }
+
+    .appointment-details div {
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .appointment-details div i.fa-fw {
+      color: var(--secondary-color);
+      width: 1.2em;
+      text-align: center;
+    }
+    .appointment-details span.label {
+      font-weight: 600;
+      color: var(--primary-color);
+      min-width: 70px;
+      display: inline-block;
+    }
+    .appointment-details span.value { color: var(--text-color); }
+
+    .appointment-timer {
+      background-color: var(--timer-bg);
+      color: var(--timer-text);
+      padding: 6px 10px;
+      border-radius: 4px;
+      margin-top: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      border: 1px solid var(--medium-gray);
+    }
+    .appointment-timer .timer-value {
+      font-weight: 600;
+      font-family: monospace;
+      letter-spacing: 1px;
+      min-width: 70px;
+      text-align: center;
+    }
+    .appointment-timer .timer-expired {
+      font-style: italic;
+      color: var(--dark-gray);
+    }
+
+    .appointment-status {
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-align: center;
+      border: 1px solid transparent;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      margin-left: 5px;
+    }
+
+    .appointment-card.status-reserved { border-left-color: var(--status-reserved-border); }
+    .status-reserved { background-color: var(--status-reserved-bg); color: var(--secondary-color); border-color: var(--status-reserved-border); }
+
+    .appointment-card.status-confirmed { border-left-color: var(--status-confirmed-border); }
+    .status-confirmed { background-color: var(--status-confirmed-bg); color: var(--toast-success); border-color: var(--status-confirmed-border); }
+
+    .appointment-card.status-waiting { border-left-color: var(--status-waiting-border); }
+    .status-waiting { background-color: var(--status-waiting-bg); color: var(--toast-info); border-color: var(--status-waiting-border); }
+
+    .appointment-card.status-pending { border-left-color: var(--status-pending-border); }
+    .status-pending { background-color: var(--status-pending-bg); color: var(--toast-error); border-color: var(--status-pending-border); }
+
+    .appointment-card.status-missed { border-left-color: var(--status-missed-border); }
+    .status-missed { background-color: var(--status-missed-bg); color: var(--text-color); border-color: var(--status-missed-border); opacity: 0.7; }
+
+    .no-appointments-message {
+      text-align: center;
+      color: var(--dark-gray);
+      font-size: 0.9rem;
+      padding: 15px;
+      background-color: var(--light-gray);
+      border-radius: 4px;
+    }
+
+    .button-container {
+      text-align: center;
+      margin-top: 10px;
+    }
+    .global-button-container {
+      text-align: center;
+      margin-top: 15px;
+    }
+
+    .btn {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: var(--transition);
+      text-decoration: none;
+      display: inline-block;
+      width: 100%;
+    }
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      width: auto;
+    }
+
+    .btn-primary { background-color: var(--secondary-color); color: var(--primary-color); }
+    .btn-primary:hover { background-color: #c0934f; }
+    .btn-danger { background-color: var(--accent-color); color: var(--white); }
+    .btn-danger:hover { background-color: #d43f3f; }
+    .btn-success { background-color: var(--toast-success); color: var(--white); }
+    .btn-success:hover { background-color: #45a049; }
+
+    @media (max-width: 480px) {
+      body { padding: 8px; }
+      .confirmation-container { padding: 10px; }
+      .confirmation-header h2 { font-size: 1.2rem; }
+      .confirmation-header p { font-size: 0.8rem; }
+      .appointment-details div { font-size: 0.8rem; }
+      .appointment-status { font-size: 0.7rem; padding: 2px 6px; }
+      .btn { font-size: 0.85rem; }
+      .btn-sm { font-size: 0.8rem; }
+      .toast { font-size: 11px; padding: 10px 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="toast" class="toast" style="display: none;"></div>
+
+  <div class="confirmation-container">
+    <div class="confirmation-header">
+      <h2 data-i18n="confirmation_title">مواعيدك</h2>
+      <p data-i18n="confirmation_subtitle">تفاصيل حجوزاتك الحالية</p>
+    </div>
+
+    <ul id="appointmentsList" class="appointments-list">
+      <li style="text-align: center; color: var(--dark-gray); padding: 15px 0;" id="loadingIndicator">
+        <i class="fas fa-spinner fa-spin"></i> <span data-i18n="loading">جار التحميل...</span>
+      </li>
+    </ul>
+
+    <div id="noAppointmentsMessage" class="no-appointments-message" style="display: none;" data-i18n="no_appointments_found">
+      لم يتم العثور على مواعيد لرقم الهاتف هذا.
+    </div>
+
+    <div class="global-button-container">
+      <a href="index.html" class="btn btn-primary" data-i18n="back_home">العودة إلى الرئيسية</a>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAM4Ndd0QpNopVDh7GVVt3VNRpEJqjN6bE",
+      authDomain: "barber-9e894.firebaseapp.com",
+      databaseURL: "https://barber-9e894-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "barber-9e894",
+      storageBucket: "barber-9e894.appspot.com",
+      messagingSenderId: "945554099633",
+      appId: "1:945554099633:web:6165ab5141244353eac190",
+      measurementId: "G-Q11YNGD98E"
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const appointmentsRef = database.ref('appointments');
+
+    let activeTimers = {};
+
+    function showToast(message, type = 'info', duration = 3000, confirmCallback = null) {
+      const toast = document.getElementById('toast');
+      toast.innerHTML = '';
+      toast.className = 'toast';
+      toast.classList.remove('show');
+      toast.style.display = 'none';
+
+      const toastIcon = document.createElement('i');
+      const toastMessageSpan = document.createElement('span');
+      toastMessageSpan.className = 'toast-message';
+      toastMessageSpan.textContent = message;
+
+      let iconClass;
+      switch (type) {
+        case 'success': iconClass = 'fa-check-circle'; break;
+        case 'error': iconClass = 'fa-exclamation-circle'; break;
+        case 'info': iconClass = 'fa-info-circle'; break;
+        case 'confirm': iconClass = 'fa-question-circle'; break;
+        default: iconClass = 'fa-info-circle';
+      }
+      toastIcon.className = `fas ${iconClass} toast-icon`;
+
+      toast.appendChild(toastIcon);
+      toast.appendChild(toastMessageSpan);
+
+      if (type === 'confirm') {
+        toast.classList.add('confirm');
+        const buttonsDiv = document.createElement('div');
+        buttonsDiv.className = 'toast-buttons';
+        const lang = document.documentElement.lang || 'ar';
+        buttonsDiv.innerHTML = `
+          <button class="yes-btn">${translations[lang]?.yes || 'Yes'}</button>
+          <button class="no-btn">${translations[lang]?.no || 'No'}</button>`;
+        toast.appendChild(buttonsDiv);
+        buttonsDiv.querySelector('.yes-btn').onclick = () => { if (confirmCallback) confirmCallback(true); hideToast(); };
+        buttonsDiv.querySelector('.no-btn').onclick = () => { if (confirmCallback) confirmCallback(false); hideToast(); };
+      } else {
+        const toastClose = document.createElement('button');
+        toastClose.className = 'toast-close';
+        toastClose.innerHTML = '×';
+        toastClose.onclick = hideToast;
+        toast.appendChild(toastClose);
+        toast.classList.add(type);
+        setTimeout(hideToast, duration);
+      }
+
+      toast.style.display = 'flex';
+      setTimeout(() => toast.classList.add('show'), 10);
+
+      function hideToast() {
+        toast.classList.remove('show');
+        setTimeout(() => toast.style.display = 'none', 300);
+      }
+    }
+
+    const translations = {
+      ar: {
+        "confirmation_title": "مواعيدك",
+        "confirmation_subtitle": "تفاصيل حجوزاتك الحالية",
+        "no_appointments_found": "لم يتم العثور على مواعيد لرقم الهاتف هذا.",
+        "back_home": "العودة إلى الرئيسية",
+        "full_name": "الاسم",
+        "date": "التاريخ",
+        "time": "الوقت",
+        "status": "الحالة",
+        "phone_number": "رقم الهاتف",
+        "reserved": "محجوز",
+        "confirmed": "مؤكد",
+        "waiting": "في الانتظار",
+        "pending": "في انتظار التأكيد",
+        "missed": "فات الموعد",
+        "from_waiting": "من الانتظار",
+        "cancel_appointment": "إلغاء الموعد",
+        "confirm_appointment": "تأكيد الموعد",
+        "confirm_cancel": "هل أنت متأكد من رغبتك في إلغاء هذا الموعد؟",
+        "confirm_confirm": "هل أنت متأكد من تأكيد هذا الموعد؟",
+        "appointment_canceled": "تم إلغاء الموعد بنجاح!",
+        "appointment_confirmed": "تم تأكيد الموعد بنجاح!",
+        "error_canceling": "حدث خطأ أثناء الإلغاء.",
+        "error_confirming": "حدث خطأ أثناء التأكيد.",
+        "error_fetching": "حدث خطأ أثناء جلب المواعيد.",
+        "no_phone": "لم يتم تقديم رقم هاتف.",
+        "yes": "نعم",
+        "no": "لا",
+        "time_left": "الوقت المتبقي",
+        "timer_expired": "انتهى الوقت",
+        "time_not_set": "غير محدد",
+        "loading": "جار التحميل...",
+        "return_to_confirm": "يرجى العودة إلى هذه الصفحة في الساعة {time} لتأكيد موعدك."
+      },
+      fr: {
+        "confirmation_title": "Vos Rendez-vous",
+        "confirmation_subtitle": "Détails de vos réservations actuelles",
+        "no_appointments_found": "Aucun rendez-vous trouvé pour ce numéro de téléphone.",
+        "back_home": "Retour à l'accueil",
+        "full_name": "Nom",
+        "date": "Date",
+        "time": "Heure",
+        "status": "Statut",
+        "phone_number": "Téléphone",
+        "reserved": "Réservé",
+        "confirmed": "Confirmé",
+        "waiting": "En attente",
+        "pending": "En attente de confirmation",
+        "missed": "Rendez-vous manqué",
+        "from_waiting": "De l'attente",
+        "cancel_appointment": "Annuler RDV",
+        "confirm_appointment": "Confirmer RDV",
+        "confirm_cancel": "Êtes-vous sûr de vouloir annuler ce rendez-vous ?",
+        "confirm_confirm": "Êtes-vous sûr de vouloir confirmer ce rendez-vous ?",
+        "appointment_canceled": "Rendez-vous annulé avec succès !",
+        "appointment_confirmed": "Rendez-vous confirmé avec succès !",
+        "error_canceling": "Erreur lors de l'annulation.",
+        "error_confirming": "Erreur lors de la confirmation.",
+        "error_fetching": "Erreur lors de la récupération des rendez-vous.",
+        "no_phone": "Aucun numéro de téléphone fourni.",
+        "yes": "Oui",
+        "no": "Non",
+        "time_left": "Temps restant",
+        "timer_expired": "Temps écoulé",
+        "time_not_set": "Non défini",
+        "loading": "Chargement...",
+        "return_to_confirm": "Veuillez revenir sur cette page à {time} pour confirmer votre rendez-vous."
+      }
+    };
+
+    function updateLanguageElements(lang) {
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang]?.[key]) {
+          el.textContent = translations[lang][key];
+        }
+      });
+    }
+
+    function formatDisplayTime(timeStr, lang) {
+      if (!timeStr || !/^\d{1,2}:\d{2}$/.test(timeStr)) {
+        return translations[lang]?.time_not_set || '--:--';
+      }
+      const [hour, minute] = timeStr.split(':').map(Number);
+      const period = lang === 'ar' ? (hour >= 12 ? 'مساءا' : 'صباحا') : (hour >= 12 ? 'PM' : 'AM');
+      const displayHour = hour % 12 || 12;
+      return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
+    }
+
+    function formatTimer(milliseconds, lang) {
+      if (milliseconds <= 0) {
+        return `<span class="timer-expired">${translations[lang]?.timer_expired || 'Expired'}</span>`;
+      }
+      const totalSeconds = Math.floor(milliseconds / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function getTimeMinus30Minutes(timeStr) {
+      const [hour, minute] = timeStr.split(':').map(Number);
+      let newHour = hour;
+      let newMinute = minute - 30;
+      if (newMinute < 0) {
+        newMinute += 60;
+        newHour -= 1;
+        if (newHour < 0) newHour = 23;
+      }
+      return `${newHour.toString().padStart(2, '0')}:${newMinute.toString().padStart(2, '0')}`;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const savedLang = localStorage.getItem('userLang') || 'ar';
+      updateLanguageElements(savedLang);
+      fetchAndDisplayAppointments();
+    });
+
+    function clearAllTimers() {
+      Object.values(activeTimers).forEach(intervalId => clearInterval(intervalId));
+      activeTimers = {};
+    }
+
+    async function fetchAndDisplayAppointments() {
+      clearAllTimers();
+      const appointmentsList = document.getElementById('appointmentsList');
+      const noAppointmentsMessage = document.getElementById('noAppointmentsMessage');
+      const loadingIndicator = document.getElementById('loadingIndicator');
+
+      appointmentsList.innerHTML = '';
+      appointmentsList.appendChild(loadingIndicator);
+      loadingIndicator.style.display = 'block';
+      noAppointmentsMessage.style.display = 'none';
+
+      const lang = document.documentElement.lang;
+      const params = new URLSearchParams(window.location.search);
+      const phoneNumber = params.get('phone');
+
+      if (!phoneNumber) {
+        loadingIndicator.style.display = 'none';
+        showToast(translations[lang]['no_phone'], 'error');
+        noAppointmentsMessage.textContent = translations[lang]['no_phone'];
+        noAppointmentsMessage.style.display = 'block';
+        return;
+      }
+
+      try {
+        const snapshot = await appointmentsRef.once('value');
+        const allAppointmentsData = snapshot.val();
+        const userAppointments = [];
+
+        if (allAppointmentsData) {
+          Object.keys(allAppointmentsData).forEach(date => {
+            const dateAppointments = allAppointmentsData[date];
+            Object.keys(dateAppointments).forEach(appointmentId => {
+              const appointment = dateAppointments[appointmentId];
+              if (appointment.phoneNumber === phoneNumber) {
+                userAppointments.push({
+                  id: appointmentId,
+                  date: date,
+                  time: appointment.appointmentTime,
+                  status: appointment.status || 'reserved',
+                  fullName: appointment.fullName,
+                  phoneNumber: appointment.phoneNumber,
+                  fromWaitingList: appointment.fromWaitingList || false
+                });
+              }
+            });
+          });
+        }
+
+        loadingIndicator.style.display = 'none';
+
+        if (userAppointments.length > 0) {
+          userAppointments.sort((a, b) => {
+            const dateTimeA = new Date(`${a.date}T${a.time || '00:00'}:00`);
+            const dateTimeB = new Date(`${b.date}T${b.time || '00:00'}:00`);
+            return dateTimeA - dateTimeB;
+          });
+
+          userAppointments.forEach(appt => {
+            const li = document.createElement('li');
+            li.id = `appt-${appt.id}`;
+            li.classList.add('appointment-card');
+
+            const now = new Date();
+            const targetDateTime = new Date(`${appt.date}T${appt.time}:00`);
+            const confirmStartTimeStr = getTimeMinus30Minutes(appt.time);
+            const confirmStartDateTime = new Date(`${appt.date}T${confirmStartTimeStr}:00`);
+            let currentStatus = appt.status;
+            const timeDiffMinutes = (targetDateTime - now) / (1000 * 60);
+            const confirmWindowMinutes = (targetDateTime - confirmStartDateTime) / (1000 * 60);
+
+            if (currentStatus !== 'confirmed' && currentStatus !== 'missed') {
+              if (timeDiffMinutes <= 0) {
+                currentStatus = 'missed';
+                appointmentsRef.child(appt.date).child(appt.id).update({ status: 'missed' });
+              } else if (timeDiffMinutes <= confirmWindowMinutes && now >= confirmStartDateTime) {
+                currentStatus = 'pending';
+              } else {
+                currentStatus = 'reserved';
+              }
+            }
+
+            li.classList.add(`status-${currentStatus}`);
+            const displayTime = formatDisplayTime(appt.time, lang);
+            const confirmStartDisplayTime = formatDisplayTime(confirmStartTimeStr, lang);
+            const statusText = translations[lang][currentStatus] || currentStatus;
+            const displayPhoneNumber = appt.phoneNumber.replace('+216', ''); // Remove country code
+
+            let timerTarget = targetDateTime;
+            if (currentStatus === 'reserved' && now < confirmStartDateTime) {
+              timerTarget = confirmStartDateTime;
+            }
+
+            li.innerHTML = `
+              <div class="appointment-details">
+                <div>
+                  <i class="fas fa-user fa-fw"></i>
+                  <span class="label" data-i18n="full_name">${translations[lang]['full_name']}</span>:
+                  <span class="value">${appt.fullName}</span>
+                </div>
+                <div>
+                  <i class="fas fa-calendar-alt fa-fw"></i>
+                  <span class="label" data-i18n="date">${translations[lang]['date']}</span>:
+                  <span class="value">${appt.date}</span>
+                </div>
+                <div>
+                  <i class="fas fa-clock fa-fw"></i>
+                  <span class="label" data-i18n="time">${translations[lang]['time']}</span>:
+                  <span class="value">${displayTime}</span>
+                </div>
+                <div>
+                  <i class="fas fa-phone fa-fw"></i>
+                  <span class="label" data-i18n="phone_number">${translations[lang]['phone_number']}</span>:
+                  <span class="value">${displayPhoneNumber}</span>
+                </div>
+                <div>
+                  <i class="fas fa-info-circle fa-fw"></i>
+                  <span class="label" data-i18n="status">${translations[lang]['status']}</span>:
+                  <span class="appointment-status status-${currentStatus}">${statusText}</span>
+                </div>
+                ${appt.fromWaitingList ? `<div><i class="fas fa-list-ol fa-fw"></i><span class="label" data-i18n="from_waiting">${translations[lang]['from_waiting']}</span></div>` : ''}
+                ${currentStatus === 'reserved' && now < confirmStartDateTime ? `<div><i class="fas fa-exclamation-circle fa-fw"></i><span class="value">${translations[lang]['return_to_confirm'].replace('{time}', confirmStartDisplayTime)}</span></div>` : ''}
+
+                <div class="appointment-timer" id="timer-${appt.id}">
+                  <i class="fas fa-stopwatch"></i>
+                  <span class="timer-label" data-i18n="time_left">${translations[lang]['time_left']}</span>:
+                  <span class="timer-value">--:--:--</span>
+                </div>
+
+                <div class="button-container">
+                  ${currentStatus === 'pending' ? `<button class="btn btn-success btn-sm confirm-button" data-id="${appt.id}" data-date="${appt.date}">${translations[lang]['confirm_appointment']}</button>` : ''}
+                  ${currentStatus !== 'missed' && currentStatus !== 'confirmed' ? `<button class="btn btn-danger btn-sm cancel-button" data-id="${appt.id}" data-date="${appt.date}">${translations[lang]['cancel_appointment']}</button>` : ''}
+                </div>
+              </div>
+            `;
+            appointmentsList.appendChild(li);
+
+            if (timerTarget && timerTarget > now) {
+              const timerValueElement = li.querySelector(`#timer-${appt.id} .timer-value`);
+              updateTimer(timerTarget, timerValueElement, appt.id, lang);
+
+              const intervalId = setInterval(() => {
+                updateTimer(timerTarget, timerValueElement, appt.id, lang);
+              }, 1000);
+              activeTimers[appt.id] = intervalId;
+            } else if (currentStatus === 'missed') {
+              const timerValueElement = li.querySelector(`#timer-${appt.id} .timer-value`);
+              timerValueElement.innerHTML = `<span class="timer-expired">${translations[lang]?.timer_expired || 'Expired'}</span>`;
+            } else {
+              li.querySelector(`#timer-${appt.id}`).style.display = 'none';
+            }
+          });
+
+          document.querySelectorAll('.cancel-button').forEach(button => {
+            button.addEventListener('click', function() {
+              const appointmentId = this.dataset.id;
+              const appointmentDate = this.dataset.date;
+              showToast(translations[lang]['confirm_cancel'], 'confirm', Infinity, (confirmed) => {
+                if (confirmed) cancelAppointment(appointmentDate, appointmentId);
+              });
+            });
+          });
+
+          document.querySelectorAll('.confirm-button').forEach(button => {
+            button.addEventListener('click', function() {
+              const appointmentId = this.dataset.id;
+              const appointmentDate = this.dataset.date;
+              showToast(translations[lang]['confirm_confirm'], 'confirm', Infinity, (confirmed) => {
+                if (confirmed) confirmAppointment(appointmentDate, appointmentId);
+              });
+            });
+          });
+
+        } else {
+          noAppointmentsMessage.textContent = translations[lang]['no_appointments_found'];
+          noAppointmentsMessage.style.display = 'block';
+        }
+
+      } catch (error) {
+        console.error("Error fetching appointments:", error);
+        loadingIndicator.style.display = 'none';
+        showToast(translations[lang]['error_fetching'], 'error');
+        noAppointmentsMessage.textContent = translations[lang]['error_fetching'];
+        noAppointmentsMessage.style.display = 'block';
+      }
+    }
+
+    function updateTimer(targetDateTime, timerElement, appointmentId, lang) {
+      const now = new Date();
+      const diff = targetDateTime - now;
+
+      if (diff <= 0) {
+        timerElement.innerHTML = `<span class="timer-expired">${translations[lang]?.timer_expired || 'Expired'}</span>`;
+        clearInterval(activeTimers[appointmentId]);
+        delete activeTimers[appointmentId];
+        setTimeout(fetchAndDisplayAppointments, 1000);
+      } else {
+        timerElement.textContent = formatTimer(diff, lang);
+      }
+    }
+
+    async function cancelAppointment(date, id) {
+      const lang = document.documentElement.lang;
+      try {
+        await appointmentsRef.child(date).child(id).remove();
+        clearInterval(activeTimers[id]);
+        delete activeTimers[id];
+        showToast(translations[lang]['appointment_canceled'], 'success');
+        const listItem = document.getElementById(`appt-${id}`);
+        if (listItem) {
+          listItem.style.opacity = '0.5';
+          listItem.style.textDecoration = 'line-through';
+          setTimeout(() => listItem.remove(), 1000);
+        } else {
+          fetchAndDisplayAppointments();
+        }
+      } catch (error) {
+        console.error("Error canceling appointment:", error);
+        showToast(translations[lang]['error_canceling'], 'error');
+      }
+    }
+
+    async function confirmAppointment(date, id) {
+      const lang = document.documentElement.lang;
+      try {
+        await appointmentsRef.child(date).child(id).update({ status: 'confirmed' });
+        clearInterval(activeTimers[id]);
+        delete activeTimers[id];
+        showToast(translations[lang]['appointment_confirmed'], 'success');
+        fetchAndDisplayAppointments();
+      } catch (error) {
+        console.error("Error confirming appointment:", error);
+        showToast(translations[lang]['error_confirming'], 'error');
+      }
+    }
+
+    setInterval(() => {
+      fetchAndDisplayAppointments();
+    }, 60000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Me</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4cc9f0;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --success-color: #4bb543;
+            --error-color: #ff3333;
+            --star-color: #FFD700;
+            --star-shadow: 0 0 8px rgba(255, 215, 0, 0.7);
+            --hover-star-color: #FFEB3B;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 1.5rem;
+            background: white;
+            min-height: 100vh;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 1.8rem;
+        }
+
+        .contact-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background-color: var(--light-color);
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .contact-info a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            transition: color 0.3s;
+            font-size: 0.95rem;
+        }
+
+        .contact-info a:hover {
+            color: var(--secondary-color);
+        }
+
+        .contact-info i {
+            margin-right: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.3rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--dark-color);
+            font-size: 0.95rem;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .rating-system {
+            margin-bottom: 1.5rem;
+        }
+
+        .rating-categories {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .rating-category {
+            background-color: var(--light-color);
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .rating-category h3 {
+            font-size: 0.95rem;
+            margin-bottom: 0.8rem;
+            color: var(--dark-color);
+        }
+
+        .stars {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 0.5rem;
+        }
+
+        .star {
+            cursor: pointer;
+            color: #ddd;
+            font-size: 1.8rem;
+            transition: all 0.3s ease;
+            position: relative;
+            padding: 0 0.2rem;
+        }
+
+        .star:hover {
+            transform: scale(1.2);
+        }
+
+        .star.active {
+            color: var(--star-color);
+            text-shadow: var(--star-shadow);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .submit-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            left: 20px;
+            padding: 1rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            transform: translateY(-150%);
+            transition: transform 0.3s ease-in-out;
+            max-width: 100%;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+        }
+
+        .toast.success {
+            background-color: var(--success-color);
+        }
+
+        .toast.error {
+            background-color: var(--error-color);
+        }
+
+        .toast i {
+            margin-right: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        /* Mobile-specific adjustments */
+        @media (min-width: 480px) {
+            .container {
+                max-width: 480px;
+                margin: 1rem auto;
+                padding: 1.8rem;
+                border-radius: 12px;
+                min-height: auto;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            }
+            
+            .rating-categories {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+            
+            .toast {
+                left: auto;
+                right: 20px;
+                max-width: 300px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                max-width: 600px;
+                margin: 2rem auto;
+                padding: 2rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+                margin-bottom: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 data-i18n="contactMeTitle">Contact Me</h1>
+        
+        <div class="contact-info">
+            <a href="mailto:your-email@example.com" data-i18n="contactEmail">
+                <i class="fas fa-envelope"></i>
+                barberlystyle@gmail.com
+            </a>
+        </div>
+        
+        <form id="contactForm">
+            <div class="form-group">
+                <label for="name" data-i18n="yourNameLabel">Your Name</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email" data-i18n="yourEmailLabel">Your Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="subject" data-i18n="subjectLabel">Subject</label>
+                <input type="text" id="subject" name="subject" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="message" data-i18n="yourMessageLabel">Your Message</label>
+                <textarea id="message" name="message" required></textarea>
+            </div>
+            
+            <div class="form-group rating-system">
+                <label data-i18n="rateExperienceLabel">How would you rate your experience?</label>
+                <div class="stars">
+                    <i class="fas fa-star star" data-value="1"></i>
+                    <i class="fas fa-star star" data-value="2"></i>
+                    <i class="fas fa-star star" data-value="3"></i>
+                    <i class="fas fa-star star" data-value="4"></i>
+                    <i class="fas fa-star star" data-value="5"></i>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="recommend" data-i18n="recommendLabel">Would you recommend me to others?</label>
+                <select id="recommend" name="recommend" required>
+                    <option value="" disabled selected data-i18n="selectOption">Select an option</option>
+                    <option value="definitely" data-i18n="definitelyOption">Definitely</option>
+                    <option value="probably" data-i18n="probablyOption">Probably</option>
+                    <option value="not-sure" data-i18n="notSureOption">Not sure</option>
+                    <option value="no" data-i18n="noOption">No</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="submit-btn" data-i18n="sendMessageButton">
+                <i class="fas fa-paper-plane"></i> Send Message
+            </button>
+        </form>
+    </div>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toast-message"></span>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Translations
+            const translations = {
+                en: {
+                    contactMeTitle: "Contact Us",
+                    contactEmail: "barberlystyle@gmail.com",
+                    yourNameLabel: "Your Name",
+                    yourEmailLabel: "Your Email",
+                    subjectLabel: "Subject",
+                    yourMessageLabel: "Your Message",
+                    rateExperienceLabel: "How would you rate your experience?",
+                    recommendLabel: "Would you recommend me to others?",
+                    selectOption: "Select an option",
+                    definitelyOption: "Definitely",
+                    probablyOption: "Probably",
+                    notSureOption: "Not sure",
+                    noOption: "No",
+                    sendMessageButton: "Send Message",
+                    messageSentSuccess: "Message sent successfully!",
+                    messageSentError: "Failed to send message. Please try again.",
+                },
+                ar: {
+                    contactMeTitle: "اتصل بنا",
+                    contactEmail: "barberlystyle@gmail.com", // Keep email as is
+                    yourNameLabel: "اسمك",
+                    yourEmailLabel: "بريدك الإلكتروني",
+                    subjectLabel: "الموضوع",
+                    yourMessageLabel: "رسالتك",
+                    rateExperienceLabel: "كيف تقيم تجربتك؟",
+                    recommendLabel: "هل توصي بنا للآخرين؟",
+                    selectOption: "اختر خيارا",
+                    definitelyOption: "بالتأكيد",
+                    probablyOption: "ربما",
+                    notSureOption: "لست متأكدا",
+                    noOption: "لا",
+                    sendMessageButton: "إرسال الرسالة",
+                    messageSentSuccess: "تم إرسال الرسالة بنجاح!",
+                    messageSentError: "فشل إرسال الرسالة. يرجى المحاولة مرة أخرى.",
+                },
+                 fr: {
+                    contactMeTitle: "Contactez-Nous",
+                    contactEmail: "barberlystyle@gmail.com", // Keep email as is
+                    yourNameLabel: "Votre Nom",
+                    yourEmailLabel: "Votre Email",
+                    subjectLabel: "Sujet",
+                    yourMessageLabel: "Votre Message",
+                    rateExperienceLabel: "Comment évalueriez-vous votre expérience?",
+                    recommendLabel: "Nous recommanderiez-vous à d'autres?",
+                    selectOption: "Sélectionnez une option",
+                    definitelyOption: "Certainement",
+                    probablyOption: "Probablement",
+                    notSureOption: "Pas sûr(e)",
+                    noOption: "Non",
+                    sendMessageButton: "Envoyer le Message",
+                    messageSentSuccess: "Message envoyé avec succès!",
+                    messageSentError: "Échec de l'envoi du message. Veuillez réessayer.",
+                }
+            };
+
+            // Function to set language and direction
+            function setLanguage(language) {
+                const htmlElement = document.documentElement;
+                htmlElement.lang = language;
+                htmlElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+
+                // Update text content
+                document.querySelectorAll('[data-i18n]').forEach(element => {
+                    const key = element.getAttribute('data-i18n');
+                    element.textContent = translations[language][key] || translations.en[key] || key; // Fallback
+                });
+            }
+
+            // Get language from localStorage
+            let currentLanguage = localStorage.getItem('userLang') || 'en';
+            setLanguage(currentLanguage);
+
+            // Star rating functionality
+            const stars = document.querySelectorAll('.star');
+            let selectedRating = 0;
+            
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const value = parseInt(this.getAttribute('data-value'));
+                    selectedRating = value;
+                    
+                    // Update stars display
+                    stars.forEach((s, index) => {
+                        if (index < value) {
+                            s.classList.add('active');
+                        } else {
+                            s.classList.remove('active');
+                        }
+                    });
+                });
+                
+                // Hover effects
+                star.addEventListener('mouseenter', function() {
+                    const value = parseInt(this.getAttribute('data-value'));
+                    
+                    stars.forEach((s, index) => {
+                        if (index < value && !s.classList.contains('active')) {
+                            s.style.color = '#FFEB3B';
+                        }
+                    });
+                });
+                
+                star.addEventListener('mouseleave', function() {
+                    stars.forEach((s, index) => {
+                        if (!s.classList.contains('active')) {
+                            s.style.color = '#ddd';
+                        }
+                    });
+                });
+            });
+
+            // Form submission
+            const form = document.getElementById('contactForm');
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Get form data
+                const formData = new FormData(form);
+                const data = {
+                    name: formData.get('name'),
+                    email: formData.get('email'),
+                    subject: formData.get('subject'),
+                    message: formData.get('message'),
+                    recommend: formData.get('recommend'),
+                    rating: selectedRating || 0,
+                    timestamp: new Date().toISOString()
+                };
+                
+                // Show loading state
+                const submitBtn = form.querySelector('.submit-btn');
+                const originalText = submitBtn.getAttribute('data-i18n'); // Get original key
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                submitBtn.disabled = true;
+                
+                // Replace with your Google Apps Script URL
+                const scriptUrl = 'https://script.google.com/macros/s/AKfycbzWA2vECLMRulzwrz9HkBqS9xfUDMViCbleRuBL92EizyMScjfxnxsnxOy-Y94MLgiZ/exec';
+                
+                fetch(scriptUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(() => {
+                    showToast(translations[currentLanguage].messageSentSuccess, 'success');
+                    form.reset();
+                    // Reset stars
+                    stars.forEach(star => {
+                        star.classList.remove('active');
+                        star.style.color = '#ddd';
+                    });
+                    selectedRating = 0;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast(translations[currentLanguage].messageSentError, 'error');
+                })
+                .finally(() => {
+                    submitBtn.innerHTML = `<i class="fas fa-paper-plane"></i> ${translations[currentLanguage][originalText]}`;
+                    submitBtn.disabled = false;
+                });
+            });
+            
+            function showToast(message, type) {
+                toast.className = `toast ${type}`;
+                toastMessage.textContent = message;
+
+
+
+                
+                // Update icon
+                const icon = toast.querySelector('i');
+                icon.className = type === 'success' 
+                    ? 'fas fa-check-circle' 
+                    : 'fas fa-exclamation-circle';
+                
+                toast.classList.add('show');
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 5000);
+            }
+        });
+    </script>
+</body>
+</html>
