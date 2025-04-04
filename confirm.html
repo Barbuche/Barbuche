@@ -296,79 +296,66 @@ const firebaseConfig = {
   measurementId: "G-84DMZZQHHV"
 };
 
-// Initialize Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+    const app = firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const appointmentsRef = database.ref('appointments');
 
-// Get phone number from URL
-const params = new URLSearchParams(window.location.search);
-const phoneNumber = params.get('phone');
+    let activeTimers = {};
 
-// Validate phone number format
-if (!phoneNumber || !/^\+216\d{8}$/.test(phoneNumber)) {
-  window.location.href = "index.html";
-}
+    function showToast(message, type = 'info', duration = 3000, confirmCallback = null) {
+      const toast = document.getElementById('toast');
+      toast.innerHTML = '';
+      toast.className = 'toast';
+      toast.classList.remove('show');
+      toast.style.display = 'none';
 
-// Create reference filtered by phone number
-const appointmentsRef = database.ref('appointments').orderByChild('phoneNumber').equalTo(phoneNumber);
+      const toastIcon = document.createElement('i');
+      const toastMessageSpan = document.createElement('span');
+      toastMessageSpan.className = 'toast-message';
+      toastMessageSpan.textContent = message;
 
-let activeTimers = {};
+      let iconClass;
+      switch (type) {
+        case 'success': iconClass = 'fa-check-circle'; break;
+        case 'error': iconClass = 'fa-exclamation-circle'; break;
+        case 'info': iconClass = 'fa-info-circle'; break;
+        case 'confirm': iconClass = 'fa-question-circle'; break;
+        default: iconClass = 'fa-info-circle';
+      }
+      toastIcon.className = `fas ${iconClass} toast-icon`;
 
-// Toast notification function
-function showToast(message, type = 'info', duration = 3000, confirmCallback = null) {
-  const toast = document.getElementById('toast');
-  toast.innerHTML = '';
-  toast.className = 'toast';
-  toast.classList.remove('show');
-  toast.style.display = 'none';
+      toast.appendChild(toastIcon);
+      toast.appendChild(toastMessageSpan);
 
-  const toastIcon = document.createElement('i');
-  const toastMessageSpan = document.createElement('span');
-  toastMessageSpan.className = 'toast-message';
-  toastMessageSpan.textContent = message;
+      if (type === 'confirm') {
+        toast.classList.add('confirm');
+        const buttonsDiv = document.createElement('div');
+        buttonsDiv.className = 'toast-buttons';
+        const lang = document.documentElement.lang || 'ar';
+        buttonsDiv.innerHTML = `
+          <button class="yes-btn">${translations[lang]?.yes || 'Yes'}</button>
+          <button class="no-btn">${translations[lang]?.no || 'No'}</button>`;
+        toast.appendChild(buttonsDiv);
+        buttonsDiv.querySelector('.yes-btn').onclick = () => { if (confirmCallback) confirmCallback(true); hideToast(); };
+        buttonsDiv.querySelector('.no-btn').onclick = () => { if (confirmCallback) confirmCallback(false); hideToast(); };
+      } else {
+        const toastClose = document.createElement('button');
+        toastClose.className = 'toast-close';
+        toastClose.innerHTML = '×';
+        toastClose.onclick = hideToast;
+        toast.appendChild(toastClose);
+        toast.classList.add(type);
+        setTimeout(hideToast, duration);
+      }
 
-  let iconClass;
-  switch (type) {
-    case 'success': iconClass = 'fa-check-circle'; break;
-    case 'error': iconClass = 'fa-exclamation-circle'; break;
-    case 'info': iconClass = 'fa-info-circle'; break;
-    case 'confirm': iconClass = 'fa-question-circle'; break;
-    default: iconClass = 'fa-info-circle';
-  }
-  toastIcon.className = `fas ${iconClass} toast-icon`;
+      toast.style.display = 'flex';
+      setTimeout(() => toast.classList.add('show'), 10);
 
-  toast.appendChild(toastIcon);
-  toast.appendChild(toastMessageSpan);
-
-  if (type === 'confirm') {
-    toast.classList.add('confirm');
-    const buttonsDiv = document.createElement('div');
-    buttonsDiv.className = 'toast-buttons';
-    const lang = document.documentElement.lang || 'ar';
-    buttonsDiv.innerHTML = `
-      <button class="yes-btn">${translations[lang]?.yes || 'Yes'}</button>
-      <button class="no-btn">${translations[lang]?.no || 'No'}</button>`;
-    toast.appendChild(buttonsDiv);
-    buttonsDiv.querySelector('.yes-btn').onclick = () => { if (confirmCallback) confirmCallback(true); hideToast(); };
-    buttonsDiv.querySelector('.no-btn').onclick = () => { if (confirmCallback) confirmCallback(false); hideToast(); };
-  } else {
-    const toastClose = document.createElement('button');
-    toastClose.className = 'toast-close';
-    toastClose.innerHTML = '×';
-    toastClose.onclick = hideToast;
-    toast.appendChild(toastClose);
-    toast.classList.add(type);
-    setTimeout(hideToast, duration);
-  }
-
-  toast.style.display = 'flex';
-  setTimeout(() => toast.classList.add('show'), 10);
-
-  function hideToast() {
-    toast.classList.remove('show');
-    setTimeout(() => toast.style.display = 'none', 300);
-  }
-}
+      function hideToast() {
+        toast.classList.remove('show');
+        setTimeout(() => toast.style.display = 'none', 300);
+      }
+    }
 
     const translations = {
       ar: {
@@ -696,15 +683,11 @@ function showToast(message, type = 'info', duration = 3000, confirmCallback = nu
       }
     }
 
-// Updated cancelAppointment function with secure deletion
 async function cancelAppointment(date, id) {
   const lang = document.documentElement.lang;
   try {
-    // Create secure reference with phone number parameter
-    const appointmentRef = database.ref(`appointments/${date}/${id}`).toString() + `?phone=${encodeURIComponent(phoneNumber)}`;
-    
-    // Perform the deletion
-    await database.refFromURL(appointmentRef).remove();
+    // Directly remove the appointment (security handled by rules)
+    await appointmentsRef.child(date).child(id).remove();
     
     // UI cleanup
     clearInterval(activeTimers[id]);
@@ -723,25 +706,23 @@ async function cancelAppointment(date, id) {
   }
 }
 
-// confirmAppointment function remains the same
-async function confirmAppointment(date, id) {
-  const lang = document.documentElement.lang;
-  try {
-    await database.ref(`appointments/${date}/${id}`).update({ status: 'confirmed' });
-    clearInterval(activeTimers[id]);
-    delete activeTimers[id];
-    showToast(translations[lang]['appointment_confirmed'], 'success');
-    fetchAndDisplayAppointments();
-  } catch (error) {
-    console.error("Error confirming appointment:", error);
-    showToast(translations[lang]['error_confirming'], 'error');
-  }
-}
+    async function confirmAppointment(date, id) {
+      const lang = document.documentElement.lang;
+      try {
+        await appointmentsRef.child(date).child(id).update({ status: 'confirmed' });
+        clearInterval(activeTimers[id]);
+        delete activeTimers[id];
+        showToast(translations[lang]['appointment_confirmed'], 'success');
+        fetchAndDisplayAppointments();
+      } catch (error) {
+        console.error("Error confirming appointment:", error);
+        showToast(translations[lang]['error_confirming'], 'error');
+      }
+    }
 
-// Auto-refresh every minute
-setInterval(() => {
-  fetchAndDisplayAppointments();
-}, 60000);
+    setInterval(() => {
+      fetchAndDisplayAppointments();
+    }, 60000);
   </script>
 </body>
 </html>
