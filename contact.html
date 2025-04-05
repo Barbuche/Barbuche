@@ -261,9 +261,57 @@
                 margin-bottom: 2rem;
             }
         }
+
+
+        .back-button-container {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 35px;
+  height: 35px;
+  padding: 0;
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+  text-decoration: none;
+  border-radius: 50%;
+  transition: var(--transition);
+  box-shadow: var(--box-shadow);
+}
+
+.back-btn i {
+  font-size: 1rem;
+}
+
+.back-btn:hover {
+  background-color: #c0934f;
+  transform: scale(1.1);
+}
+
+@media (max-width: 480px) {
+  .back-button-container {
+    top: 8px;
+    left: 8px;
+  }
+  .back-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 0.9rem;
+  }
+}
     </style>
 </head>
 <body>
+    
+    <div class="back-button-container">
+  <a href="index.html" class="btn back-btn">⬅️</a>
+</div>
+    
     <div class="container">
         <h1 data-i18n="contactMeTitle">Contact Me</h1>
         
