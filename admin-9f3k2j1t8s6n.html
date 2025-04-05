@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Admin</title>
+  <title>لوحة تحكم الحلاق</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -60,81 +60,41 @@
 
     .toast {
       position: fixed;
-      bottom: 70px;
+      top: 10px;
       right: 10px;
       left: 10px;
       max-width: 100%;
-      padding: 8px 10px;
+      padding: 10px 12px;
       border-radius: 6px;
       color: white;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       z-index: 1000;
       display: flex;
       align-items: center;
-      transform: translateY(100px);
+      transform: translateX(120%);
       opacity: 0;
-      transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28), opacity 0.3s ease;
+      transition: var(--transition);
       font-size: 12px;
-      max-height: 60px;
-      overflow: hidden;
     }
 
     .toast.show {
-      transform: translateY(0);
+      transform: translateX(0);
       opacity: 1;
     }
 
-    .toast.hide {
-      transform: translateY(100px);
-      opacity: 0;
-    }
+    .toast.success { background-color: var(--toast-success); border-left: 4px solid #2E7D32; }
+    .toast.error { background-color: var(--toast-error); border-left: 4px solid #C62828; }
+    .toast.info { background-color: var(--toast-info); border-left: 4px solid #1565C0; }
+    .toast.confirm { background-color: #f8d7da; color: #721c24; flex-direction: column; padding: 12px; }
 
-    .toast.success { background-color: var(--toast-success); }
-    .toast.error { background-color: var(--toast-error); }
-    .toast.info { background-color: var(--toast-info); }
-    .toast.confirm { 
-      background-color: #f8d7da; 
-      color: #721c24; 
-      flex-direction: column; 
-      padding: 10px;
-      max-height: none;
-    }
-
-    .toast-icon { 
-      margin-right: 8px; 
-      font-size: 14px; 
-      flex-shrink: 0;
-    }
-    .toast-close { 
-      background: none; 
-      border: none; 
-      color: inherit; 
-      font-size: 12px; 
-      cursor: pointer; 
-      margin-left: auto;
-      padding-left: 8px;
-      opacity: 0.8; 
-      transition: opacity 0.2s; 
-    }
+    .toast-icon { margin-right: 8px; font-size: 14px; }
+    .toast-close { background: none; border: none; color: white; font-size: 12px; cursor: pointer; margin-left: 8px; opacity: 0.7; transition: opacity 0.2s; }
     .toast-close:hover { opacity: 1; }
-    .toast.confirm .toast-buttons { 
-      margin-top: 6px; 
-      display: flex; 
-      gap: 6px; 
-      width: 100%;
-    }
-    .toast.confirm button { 
-      padding: 4px 8px; 
-      border: none; 
-      border-radius: 4px; 
-      cursor: pointer; 
-      font-size: 11px; 
-      flex: 1;
-    }
+    .toast.confirm .toast-buttons { margin-top: 8px; display: flex; gap: 8px; }
+    .toast.confirm button { padding: 4px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
     .toast.confirm .yes-btn { background-color: #dc3545; color: white; }
     .toast.confirm .no-btn { background-color: #6c757d; color: white; }
 
-    /* Rest of your existing CSS remains exactly the same */
     .admin-main { padding: 10px 5px; width: 100%; max-width: 540px; margin: 0 auto; }
     section { background-color: var(--white); border-radius: 6px; padding: 10px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     h2 { font-family: var(--font-heading); margin-bottom: 8px; color: var(--primary-color); font-size: 1.1rem; }
@@ -207,33 +167,12 @@
       h2 { font-size: 1rem; }
       .appointment-info { grid-template-columns: 1fr; }
       .appointment-name { max-width: 100%; }
-      
-      /* Toast adjustments for small screens */
-      .toast {
-        bottom: 60px;
-        padding: 6px 8px;
-        font-size: 11px;
-        max-height: 50px;
-      }
-      .toast-icon {
-        font-size: 12px;
-        margin-right: 6px;
-      }
-      .toast.confirm {
-        padding: 8px;
-        max-height: none;
-      }
-      .toast.confirm button {
-        font-size: 10px;
-        padding: 3px 6px;
-      }
     }
   </style>
 </head>
 <body>
   <div id="toast" class="toast" style="display: none;"></div>
 
-  <!-- Rest of your HTML remains exactly the same -->
   <main class="admin-main">
     <section id="setWorkingHours">
       <h2 data-i18n="working_hours">ساعات العمل</h2>
@@ -311,18 +250,24 @@
     </div>
   </div>
 
-  <script>
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyD45HxgS5ZRSdC33TqpIU9x_Us1I9CKJeQ",
-  authDomain: "barbuche-style.firebaseapp.com",
-  databaseURL: "https://barbuche-style-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "barbuche-style",
-  storageBucket: "barbuche-style.firebasestorage.app",
-  messagingSenderId: "874661569616",
-  appId: "1:874661569616:web:4345e6200dc4b1ad6a1d55",
-  measurementId: "G-84DMZZQHHV"
-};
+  <!DOCTYPE html>
+  <html lang="ar" dir="rtl" id="htmlElement">
+  <head>
+    <!-- Existing head content unchanged -->
+  </head>
+  <body>
+    <!-- Existing body content unchanged -->
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyAM4Ndd0QpNopVDh7GVVt3VNRpEJqjN6bE",
+        authDomain: "barber-9e894.firebaseapp.com",
+        databaseURL: "https://barber-9e894-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "barber-9e894",
+        storageBucket: "barber-9e894.appspot.com",
+        messagingSenderId: "945554099633",
+        appId: "1:945554099633:web:6165ab5141244353eac190",
+        measurementId: "G-Q11YNGD98E"
+      };
   
       const app = firebase.initializeApp(firebaseConfig);
       const database = firebase.database();
@@ -332,7 +277,7 @@ const firebaseConfig = {
   
       function showToast(message, type = 'info', duration = 3000, confirmCallback = null) {
         const toast = document.getElementById('toast');
-        toast.classList.remove('show', 'hide');
+        toast.classList.remove('show');
         toast.style.display = 'none';
         toast.innerHTML = '';
   
@@ -354,19 +299,11 @@ const firebaseConfig = {
         const toastClose = document.createElement('button');
         toastClose.className = 'toast-close';
         toastClose.textContent = '×';
-        toastClose.onclick = function() {
-          toast.classList.remove('show');
-          toast.classList.add('hide');
-          setTimeout(() => {
-            toast.style.display = 'none';
-          }, 300);
-        };
+        toastClose.onclick = hideToast;
   
         toast.appendChild(toastIcon);
         toast.appendChild(toastMessage);
-        if (type !== 'confirm') {
-          toast.appendChild(toastClose);
-        }
+        toast.appendChild(toastClose);
   
         toast.className = `toast ${type}`;
         toast.style.display = 'flex';
@@ -379,32 +316,20 @@ const firebaseConfig = {
             <button class="no-btn" data-i18n="no">لا</button>`;
           toast.appendChild(buttonsDiv);
           updateLanguage(document.documentElement.lang);
-          buttonsDiv.querySelector('.yes-btn').onclick = () => { 
-            if (confirmCallback) confirmCallback(true); 
-            toast.classList.remove('show');
-            toast.classList.add('hide');
-            setTimeout(() => toast.style.display = 'none', 300);
-          };
-          buttonsDiv.querySelector('.no-btn').onclick = () => { 
-            if (confirmCallback) confirmCallback(false); 
-            toast.classList.remove('show');
-            toast.classList.add('hide');
-            setTimeout(() => toast.style.display = 'none', 300);
-          };
+          buttonsDiv.querySelector('.yes-btn').onclick = () => { confirmCallback(true); hideToast(); };
+          buttonsDiv.querySelector('.no-btn').onclick = () => { confirmCallback(false); hideToast(); };
         } else {
-          setTimeout(() => {
-            toast.classList.remove('show');
-            toast.classList.add('hide');
-            setTimeout(() => toast.style.display = 'none', 300);
-          }, duration);
+          setTimeout(hideToast, duration);
         }
   
-        // Force reflow to ensure animation plays
-        void toast.offsetWidth;
-        toast.classList.add('show');
+        setTimeout(() => toast.classList.add('show'), 10);
+  
+        function hideToast() {
+          toast.classList.remove('show');
+          setTimeout(() => toast.style.display = 'none', 300);
+        }
       }
   
-      // Rest of your JavaScript remains exactly the same
       const translations = {
         ar: {
           "working_hours": "ساعات العمل",
@@ -848,4 +773,6 @@ const firebaseConfig = {
       cleanPastData();
     </script>
   </body>
+  </html>
+</body>
 </html>
