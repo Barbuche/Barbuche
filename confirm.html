@@ -257,16 +257,54 @@
       .btn-sm { font-size: 0.8rem; }
       .toast { font-size: 11px; padding: 10px 12px; }
     }
+    .back-button-container {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+.back-button-container .btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+  text-decoration: none;
+  border-radius: 4px;
+  transition: var(--transition);
+}
+
+.back-button-container .btn:hover {
+  background-color: #c0934f;
+}
+
+@media (max-width: 480px) {
+  .back-button-container {
+    top: 8px;
+    left: 8px;
+  }
+  .back-button-container .btn {
+    font-size: 0.8rem;
+    padding: 5px 10px;
+  }
+}
   </style>
 </head>
 <body>
   <div id="toast" class="toast" style="display: none;"></div>
 
   <div class="confirmation-container">
-    <div class="confirmation-header">
-      <h2 data-i18n="confirmation_title">مواعيدك</h2>
-      <p data-i18n="confirmation_subtitle">تفاصيل حجوزاتك الحالية</p>
-    </div>
+  <div class="back-button-container">
+    <a href="index.html" class="btn btn-primary btn-sm" data-i18n="back_home">
+      <i class="fas fa-arrow-left"></i> العودة إلى الرئيسية
+    </a>
+  </div>
+  <div class="confirmation-header">
+    <h2 data-i18n="confirmation_title">مواعيدك</h2>
+    <p data-i18n="confirmation_subtitle">تفاصيل حجوزاتك الحالية</p>
+  </div>
 
     <ul id="appointmentsList" class="appointments-list">
       <li style="text-align: center; color: var(--dark-gray); padding: 15px 0;" id="loadingIndicator">
