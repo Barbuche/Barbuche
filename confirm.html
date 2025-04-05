@@ -295,25 +295,25 @@
       appId: "1:874661569616:web:4345e6200dc4b1ad6a1d55",
       measurementId: "G-84DMZZQHHV"
     };
-
+    
     const app = firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
     const appointmentsRef = database.ref('appointments');
-
+    
     let activeTimers = {};
-
+    
     function showToast(message, type = 'info', duration = 3000, confirmCallback = null) {
       const toast = document.getElementById('toast');
       toast.innerHTML = '';
       toast.className = 'toast';
       toast.classList.remove('show');
       toast.style.display = 'none';
-
+    
       const toastIcon = document.createElement('i');
       const toastMessageSpan = document.createElement('span');
       toastMessageSpan.className = 'toast-message';
       toastMessageSpan.textContent = message;
-
+    
       let iconClass;
       switch (type) {
         case 'success': iconClass = 'fa-check-circle'; break;
@@ -323,10 +323,10 @@
         default: iconClass = 'fa-info-circle';
       }
       toastIcon.className = `fas ${iconClass} toast-icon`;
-
+    
       toast.appendChild(toastIcon);
       toast.appendChild(toastMessageSpan);
-
+    
       if (type === 'confirm') {
         toast.classList.add('confirm');
         const buttonsDiv = document.createElement('div');
@@ -347,16 +347,16 @@
         toast.classList.add(type);
         setTimeout(hideToast, duration);
       }
-
+    
       toast.style.display = 'flex';
       setTimeout(() => toast.classList.add('show'), 10);
-
+    
       function hideToast() {
         toast.classList.remove('show');
         setTimeout(() => toast.style.display = 'none', 300);
       }
     }
-
+    
     const translations = {
       ar: {
         "confirmation_title": "مواعيدك",
@@ -427,7 +427,7 @@
         "return_to_confirm": "Veuillez revenir sur cette page à {time} pour confirmer votre rendez-vous."
       }
     };
-
+    
     function updateLanguageElements(lang) {
       document.documentElement.lang = lang;
       document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
@@ -438,7 +438,7 @@
         }
       });
     }
-
+    
     function formatDisplayTime(timeStr, lang) {
       if (!timeStr || !/^\d{1,2}:\d{2}$/.test(timeStr)) {
         return translations[lang]?.time_not_set || '--:--';
@@ -448,7 +448,7 @@
       const displayHour = hour % 12 || 12;
       return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
     }
-
+    
     function formatTimer(milliseconds, lang) {
       if (milliseconds <= 0) {
         return `<span class="timer-expired">${translations[lang]?.timer_expired || 'Expired'}</span>`;
@@ -459,7 +459,7 @@
       const seconds = totalSeconds % 60;
       return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
-
+    
     function getTimeMinus30Minutes(timeStr) {
       const [hour, minute] = timeStr.split(':').map(Number);
       let newHour = hour;
@@ -471,34 +471,33 @@
       }
       return `${newHour.toString().padStart(2, '0')}:${newMinute.toString().padStart(2, '0')}`;
     }
-
+    
     document.addEventListener('DOMContentLoaded', function() {
       const savedLang = localStorage.getItem('userLang') || 'ar';
       updateLanguageElements(savedLang);
       fetchAndDisplayAppointments();
     });
-
+    
     function clearAllTimers() {
       Object.values(activeTimers).forEach(intervalId => clearInterval(intervalId));
       activeTimers = {};
     }
-
+    
     async function fetchAndDisplayAppointments() {
       clearAllTimers();
       const appointmentsList = document.getElementById('appointmentsList');
       const noAppointmentsMessage = document.getElementById('noAppointmentsMessage');
       const loadingIndicator = document.getElementById('loadingIndicator');
-
+    
       appointmentsList.innerHTML = '';
       appointmentsList.appendChild(loadingIndicator);
       loadingIndicator.style.display = 'block';
       noAppointmentsMessage.style.display = 'none';
-
+    
       const lang = document.documentElement.lang;
       const params = new URLSearchParams(window.location.search);
       const phoneNumber = params.get('phone');
-      console.log('Phone number from URL:', phoneNumber); // Debug: Check phone number
-
+    
       if (!phoneNumber) {
         loadingIndicator.style.display = 'none';
         showToast(translations[lang]['no_phone'], 'error');
@@ -506,50 +505,46 @@
         noAppointmentsMessage.style.display = 'block';
         return;
       }
-
+    
       try {
-        const snapshot = await appointmentsRef
-          .orderByChild('phoneNumber')
-          .equalTo(phoneNumber)
-          .once('value');
-        console.log('Snapshot value:', snapshot.val()); // Debug: Check fetched data
-
+        const snapshot = await appointmentsRef.once('value');
         const allAppointmentsData = snapshot.val();
         const userAppointments = [];
-
+    
         if (allAppointmentsData) {
           Object.keys(allAppointmentsData).forEach(date => {
             const dateAppointments = allAppointmentsData[date];
             Object.keys(dateAppointments).forEach(appointmentId => {
               const appointment = dateAppointments[appointmentId];
-              userAppointments.push({
-                id: appointmentId,
-                date: date,
-                time: appointment.appointmentTime,
-                status: appointment.status || 'reserved',
-                fullName: appointment.fullName,
-                phoneNumber: appointment.phoneNumber,
-                fromWaitingList: appointment.fromWaitingList || false
-              });
+              if (appointment.phoneNumber === phoneNumber) {
+                userAppointments.push({
+                  id: appointmentId,
+                  date: date,
+                  time: appointment.appointmentTime,
+                  status: appointment.status || 'reserved',
+                  fullName: appointment.fullName,
+                  phoneNumber: appointment.phoneNumber,
+                  fromWaitingList: appointment.fromWaitingList || false
+                });
+              }
             });
           });
         }
-
-        console.log('User appointments:', userAppointments); // Debug: Check processed appointments
+    
         loadingIndicator.style.display = 'none';
-
+    
         if (userAppointments.length > 0) {
           userAppointments.sort((a, b) => {
             const dateTimeA = new Date(`${a.date}T${a.time || '00:00'}:00`);
             const dateTimeB = new Date(`${b.date}T${b.time || '00:00'}:00`);
             return dateTimeA - dateTimeB;
           });
-
+    
           userAppointments.forEach(appt => {
             const li = document.createElement('li');
             li.id = `appt-${appt.id}`;
             li.classList.add('appointment-card');
-
+    
             const now = new Date();
             const targetDateTime = new Date(`${appt.date}T${appt.time}:00`);
             const confirmStartTimeStr = getTimeMinus30Minutes(appt.time);
@@ -557,7 +552,7 @@
             let currentStatus = appt.status;
             const timeDiffMinutes = (targetDateTime - now) / (1000 * 60);
             const confirmWindowMinutes = (targetDateTime - confirmStartDateTime) / (1000 * 60);
-
+    
             if (currentStatus !== 'confirmed' && currentStatus !== 'missed') {
               if (timeDiffMinutes <= 0) {
                 currentStatus = 'missed';
@@ -568,18 +563,18 @@
                 currentStatus = 'reserved';
               }
             }
-
+    
             li.classList.add(`status-${currentStatus}`);
             const displayTime = formatDisplayTime(appt.time, lang);
             const confirmStartDisplayTime = formatDisplayTime(confirmStartTimeStr, lang);
             const statusText = translations[lang][currentStatus] || currentStatus;
             const displayPhoneNumber = appt.phoneNumber.replace('+216', '');
-
+    
             let timerTarget = targetDateTime;
             if (currentStatus === 'reserved' && now < confirmStartDateTime) {
               timerTarget = confirmStartDateTime;
             }
-
+    
             li.innerHTML = `
               <div class="appointment-details">
                 <div>
@@ -609,13 +604,13 @@
                 </div>
                 ${appt.fromWaitingList ? `<div><i class="fas fa-list-ol fa-fw"></i><span class="label" data-i18n="from_waiting">${translations[lang]['from_waiting']}</span></div>` : ''}
                 ${currentStatus === 'reserved' && now < confirmStartDateTime ? `<div><i class="fas fa-exclamation-circle fa-fw"></i><span class="value">${translations[lang]['return_to_confirm'].replace('{time}', confirmStartDisplayTime)}</span></div>` : ''}
-
+    
                 <div class="appointment-timer" id="timer-${appt.id}">
                   <i class="fas fa-stopwatch"></i>
                   <span class="timer-label" data-i18n="time_left">${translations[lang]['time_left']}</span>:
                   <span class="timer-value">--:--:--</span>
                 </div>
-
+    
                 <div class="button-container">
                   ${currentStatus === 'pending' ? `<button class="btn btn-success btn-sm confirm-button" data-id="${appt.id}" data-date="${appt.date}">${translations[lang]['confirm_appointment']}</button>` : ''}
                   ${currentStatus !== 'missed' && currentStatus !== 'confirmed' ? `<button class="btn btn-danger btn-sm cancel-button" data-id="${appt.id}" data-date="${appt.date}">${translations[lang]['cancel_appointment']}</button>` : ''}
@@ -623,11 +618,11 @@
               </div>
             `;
             appointmentsList.appendChild(li);
-
+    
             if (timerTarget && timerTarget > now) {
               const timerValueElement = li.querySelector(`#timer-${appt.id} .timer-value`);
               updateTimer(timerTarget, timerValueElement, appt.id, lang);
-
+    
               const intervalId = setInterval(() => {
                 updateTimer(timerTarget, timerValueElement, appt.id, lang);
               }, 1000);
@@ -639,7 +634,7 @@
               li.querySelector(`#timer-${appt.id}`).style.display = 'none';
             }
           });
-
+    
           document.querySelectorAll('.cancel-button').forEach(button => {
             button.addEventListener('click', function() {
               const appointmentId = this.dataset.id;
@@ -649,7 +644,7 @@
               });
             });
           });
-
+    
           document.querySelectorAll('.confirm-button').forEach(button => {
             button.addEventListener('click', function() {
               const appointmentId = this.dataset.id;
@@ -659,25 +654,25 @@
               });
             });
           });
-
+    
         } else {
           noAppointmentsMessage.textContent = translations[lang]['no_appointments_found'];
           noAppointmentsMessage.style.display = 'block';
         }
-
+    
       } catch (error) {
         console.error("Error fetching appointments:", error);
         loadingIndicator.style.display = 'none';
-        showToast(`${translations[lang]['error_fetching']}: ${error.message}`, 'error');
+        showToast(translations[lang]['error_fetching'], 'error');
         noAppointmentsMessage.textContent = translations[lang]['error_fetching'];
         noAppointmentsMessage.style.display = 'block';
       }
     }
-
+    
     function updateTimer(targetDateTime, timerElement, appointmentId, lang) {
       const now = new Date();
       const diff = targetDateTime - now;
-
+    
       if (diff <= 0) {
         timerElement.innerHTML = `<span class="timer-expired">${translations[lang]?.timer_expired || 'Expired'}</span>`;
         clearInterval(activeTimers[appointmentId]);
@@ -687,30 +682,69 @@
         timerElement.textContent = formatTimer(diff, lang);
       }
     }
-
+    
     async function cancelAppointment(date, id) {
       const lang = document.documentElement.lang;
       try {
-        await appointmentsRef.child(date).child(id).remove();
+        const appointmentRef = appointmentsRef.child(date).child(id);
+        const snapshot = await appointmentRef.once('value');
+        const appointment = snapshot.val();
+        
+        if (!appointment) {
+          showToast(translations[lang]['error_canceling'], 'error');
+          return;
+        }
+    
+        // Verify the phone number matches the URL parameter
+        const params = new URLSearchParams(window.location.search);
+        const phoneNumber = params.get('phone');
+        
+        if (appointment.phoneNumber !== phoneNumber) {
+          showToast(translations[lang]['error_canceling'], 'error');
+          return;
+        }
+    
+        await appointmentRef.remove();
         clearInterval(activeTimers[id]);
         delete activeTimers[id];
         showToast(translations[lang]['appointment_canceled'], 'success');
+        
         const listItem = document.getElementById(`appt-${id}`);
         if (listItem) {
           listItem.style.opacity = '0.5';
           listItem.style.textDecoration = 'line-through';
           setTimeout(() => listItem.remove(), 1000);
+        } else {
+          fetchAndDisplayAppointments();
         }
       } catch (error) {
         console.error("Error canceling appointment:", error);
         showToast(translations[lang]['error_canceling'], 'error');
       }
     }
-
+    
     async function confirmAppointment(date, id) {
       const lang = document.documentElement.lang;
       try {
-        await appointmentsRef.child(date).child(id).update({ status: 'confirmed' });
+        const appointmentRef = appointmentsRef.child(date).child(id);
+        const snapshot = await appointmentRef.once('value');
+        const appointment = snapshot.val();
+        
+        if (!appointment) {
+          showToast(translations[lang]['error_confirming'], 'error');
+          return;
+        }
+    
+        // Verify the phone number matches the URL parameter
+        const params = new URLSearchParams(window.location.search);
+        const phoneNumber = params.get('phone');
+        
+        if (appointment.phoneNumber !== phoneNumber) {
+          showToast(translations[lang]['error_confirming'], 'error');
+          return;
+        }
+    
+        await appointmentRef.update({ status: 'confirmed' });
         clearInterval(activeTimers[id]);
         delete activeTimers[id];
         showToast(translations[lang]['appointment_confirmed'], 'success');
@@ -720,10 +754,10 @@
         showToast(translations[lang]['error_confirming'], 'error');
       }
     }
-
+    
     setInterval(() => {
       fetchAndDisplayAppointments();
     }, 60000);
-  </script>
+    </script>
 </body>
 </html>
